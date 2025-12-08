@@ -1,0 +1,19 @@
+﻿实验条件,方法,OA (%),RPA (%),RCA (%),VR (%),文件数
+clean,Librosa,65.89,85.12,79.66,72.34,83
+clean,Basic Pitch,72.16,79.23,77.24,79.78,83
+clean,差异 (BP-L),6.27,-5.88,-2.41,7.45,
+distortion,Librosa,67.03,86.46,80.92,72.59,104
+distortion,Basic Pitch,72.37,80.98,79.42,79.14,104
+distortion,差异 (BP-L),5.34,-5.48,-1.5,6.54,
+noise_5db,Librosa,64.53,74.25,66.96,70.69,104
+noise_5db,Basic Pitch,75.99,73.93,71.49,80.57,104
+noise_5db,差异 (BP-L),11.46,-0.32,4.52,9.88,
+noise_15db,Librosa,69.33,84.63,77.98,75.42,43
+noise_15db,Basic Pitch,76.49,75.91,73.19,82.42,43
+noise_15db,差异 (BP-L),7.16,-8.72,-4.79,6.99,
+pitch_shift_25cents,Librosa,64.57,80.73,73.26,72.81,104
+pitch_shift_25cents,Basic Pitch,71.01,73.08,70.28,79.43,104
+pitch_shift_25cents,差异 (BP-L),6.45,-7.65,-2.99,6.61,
+pitch_shift_50cents,Librosa,47.46,47.12,44.8,69.72,42
+pitch_shift_50cents,Basic Pitch,58.26,42.67,40.26,77.87,42
+pitch_shift_50cents,差异 (BP-L),10.8,-4.45,-4.55,8.15,
