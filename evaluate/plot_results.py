@@ -2,7 +2,7 @@
 Plot evaluation results for pitch tracking comparison.
 
 Creates 4 plots (one for each metric: OA, RPA, RCA, VR) showing:
-- X-axis: Experimental conditions (clean, distortion, noise 5db, noise 15db, pitch shift 25cents, pitch shift 50cents)
+- X-axis: Experimental conditions (clean, distortion light/medium/heavy, noise 5db, noise 15db, pitch shift 25cents, pitch shift 50cents)
 - Y-axis: Metric values (0-1) for each audio file
 - Different colors for different models (librosa, crepe, basic_pitch)
 - Median and mean lines for each condition
@@ -50,9 +50,12 @@ class ResultsPlotter:
         }
         
         # Experimental conditions (in order)
+        # Distortion is split into light/medium/heavy levels
         self.conditions = [
             'clean',
-            'distortion',
+            'distortion_light',
+            'distortion_medium',
+            'distortion_heavy',
             'noise_5db',
             'noise_15db',
             'pitch_shift_25cents',
@@ -62,36 +65,72 @@ class ResultsPlotter:
         # Display names for conditions
         self.condition_labels = {
             'clean': 'Clean',
-            'distortion': 'Distortion',
+            'distortion_light': 'Distortion\nLight',
+            'distortion_medium': 'Distortion\nMedium',
+            'distortion_heavy': 'Distortion\nHeavy',
             'noise_5db': 'Noise 5dB',
             'noise_15db': 'Noise 15dB',
             'pitch_shift_25cents': 'Pitch Shift 25¢',
             'pitch_shift_50cents': 'Pitch Shift 50¢'
         }
+        
+        # Manifest directory for distortion level information
+        self.manifests_dir = Path("MedleyDB-Pitch-Experiments/manifests")
     
     def load_results(self) -> Dict[str, Dict[str, pd.DataFrame]]:
         """
         Load all evaluation results.
+        For distortion conditions, split by level (light/medium/heavy).
         
         Returns:
             Dictionary: {model: {condition: DataFrame}}
         """
         results = {}
         
+        # Load distortion manifest
+        dist_manifest = None
+        dist_manifest_path = self.manifests_dir / 'manifest_dist.csv'
+        if dist_manifest_path.exists():
+            dist_manifest = pd.read_csv(dist_manifest_path)
+        
         for model in self.models:
             results[model] = {}
             for condition in self.conditions:
-                # Construct file path
-                file_path = self.results_dir / f"{model}_{condition}.csv"
-                
-                if file_path.exists():
-                    df = pd.read_csv(file_path)
-                    # Remove AVERAGE row if exists
-                    df = df[df['filename'] != 'AVERAGE']
-                    results[model][condition] = df
+                if condition.startswith('distortion_'):
+                    # Handle distortion levels separately
+                    level = condition.split('_')[1]  # light, medium, or heavy
+                    # Load the main distortion file
+                    file_path = self.results_dir / f"{model}_distortion.csv"
+                    
+                    if file_path.exists() and dist_manifest is not None:
+                        df = pd.read_csv(file_path)
+                        df = df[df['filename'] != 'AVERAGE']
+                        # Extract track_id from filename
+                        df['track_id'] = df['filename'].str.replace('.csv', '', regex=False).str.replace('.wav', '', regex=False)
+                        # Merge with manifest to get level_tag
+                        df = df.merge(dist_manifest[['track_id', 'level_tag']], on='track_id', how='left')
+                        # Filter by level
+                        df_level = df[df['level_tag'] == level].copy()
+                        if len(df_level) > 0:
+                            # Remove helper columns
+                            df_level = df_level.drop(['track_id', 'level_tag'], axis=1, errors='ignore')
+                            results[model][condition] = df_level
+                        else:
+                            results[model][condition] = None
+                    else:
+                        results[model][condition] = None
                 else:
-                    print(f"Warning: {file_path} not found, skipping...")
-                    results[model][condition] = None
+                    # Handle other conditions normally
+                    file_path = self.results_dir / f"{model}_{condition}.csv"
+                    
+                    if file_path.exists():
+                        df = pd.read_csv(file_path)
+                        # Remove AVERAGE row if exists
+                        df = df[df['filename'] != 'AVERAGE']
+                        results[model][condition] = df
+                    else:
+                        print(f"Warning: {file_path} not found, skipping...")
+                        results[model][condition] = None
         
         return results
     
